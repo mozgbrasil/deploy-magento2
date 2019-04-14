@@ -1,0 +1,87 @@
+{
+    "name":"mozgbrasil/deploy-magento2",
+    "description":"Heroku Magento2 App",
+    "keywords":[
+        "heroku",
+        "magento2",
+        "mozg",
+        "brasil"
+    ],
+    "website":"http://mozg.com.br/",
+    "repository":"https://github.com/mozgbrasil/deploy-magento2",
+    "logo":"http://mozg.com.br/assets/images/logos/logo.svg",
+    "success_url":"/",
+    "scripts":{
+        "postdeploy":"bash app.sh postdeploy",
+        "pr-predestroy":"bash app.sh predestroy"
+    },
+    "env":{
+        "MAGE_URL":{
+          "description": "",
+          "value": "http://APP_NAME.herokuapp.com/magento/"
+        },
+        "RDS_HOSTNAME":{
+          "description": "",
+          "value": ""
+        },
+        "RDS_PORT":{
+          "description": "",
+          "value": "3306"
+        },
+        "RDS_DB_NAME":{
+          "description": "",
+          "value": ""
+        },
+        "RDS_USERNAME":{
+          "description": "",
+          "value": ""
+        },
+        "RDS_PASSWORD":{
+          "description": "",
+          "value": ""
+        },
+        "COMPOSER_AUTH":{
+          "description": "",
+          "value": "{\"http-basic\": {\"repo.magento.com\": {\"username\":\"00000000\",\"password\":\"00000000\"}},\"github-oauth\": {\"github.com\": \"00000000\"}}"
+        },
+        "MAGE_MODE":{
+          "description": "",
+          "value": "developer"
+        },
+        "MAGE_PROFILER":{
+          "description": "",
+          "value": "html"
+        },
+        "SECRET_TOKEN":{
+            "description":"A secret key for verifying the integrity of signed cookies.",
+            "generator":"secret"
+        }
+    },
+    "formation": {
+      "web": {
+        "quantity": 1,
+        "size": "free"
+      }
+    },
+    "addons":[
+    ],
+    "buildpacks":[
+        {
+            "url":"heroku/php"
+        },
+        {
+            "url":"https://github.com/gaumire/heroku-buildpack-mysql"
+        }
+    ],
+    "environments":{
+        "test":{
+            "scripts":{
+                "test":"bash app.sh environments"
+            }
+        }
+    },
+    "stack": "heroku-18",
+    "labs": [
+        "runtime-dyno-metadata"
+    ]
+}

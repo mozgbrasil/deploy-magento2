@@ -1,0 +1,225 @@
+{
+    "name": "mozgbrasil/deploy-magento2",
+    "description": "Magento2 Project",
+    "version": "1.0.0",
+    "type": "project",
+    "keywords": [
+      "deploy",
+      "magento2",
+      "mozg"
+    ],
+    "homepage": "http://mozg.com.br",
+    "time": "2019-02-25 19:59:31",
+    "license": [
+        "proprietary"
+    ],
+    "authors": [
+        {
+            "name": "Marcio dos Santos Amorim",
+            "email": "suporte@mozg.com.br",
+            "homepage": "http://mozg.com.br",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "email": "suporte@mozg.com.br",
+        "issues": "https://github.com/mozgbrasil/deploy-magento2/issues",
+        "forum": "http://mozg.com.br/forums/view/1",
+        "wiki": "http://wiki.mozg.com.br",
+        "irc": "irc://irc.freenode.org/mozgbrasil",
+        "source": "https://github.com/mozgbrasil/deploy-magento2",
+        "docs": "https://github.com/mozgbrasil/deploy-magento2/wiki",
+        "rss": "http://mozg.com.br/sitemap.xml"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "repositories":[
+        {
+            "type":"composer",
+            "url":"https://repo.magento.com/"
+        },
+        {
+            "type":"composer",
+            "url":"https://packages.firegento.com"
+        },
+        {
+            "type": "package",
+            "package": {
+                "name": "prasathmani/tinyfilemanager",
+                "version": "1.0.0",
+                "source":{
+                    "url":"https://github.com/prasathmani/tinyfilemanager.git",
+                    "type":"git",
+                    "reference":"master"
+                }
+            }
+        },
+        {
+            "type": "package",
+            "package": {
+                "name": "maycowa/commando",
+                "version": "1.0.0",
+                "source":{
+                    "url":"https://github.com/maycowa/commando.git",
+                    "type":"git",
+                    "reference":"master"
+                }
+            }
+        },
+        {
+            "type": "path",
+            "url": "/home/marcio/dados/mozgbrasil/php-framework",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "/home/marcio/dados/mozgbrasil/magento2-module/magento2-base",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "/home/marcio/dados/mozgbrasil/magento2-module/magento2-boxpacker",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "/home/marcio/dados/mozgbrasil/magento2-module/magento2-bundle",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "/home/marcio/dados/mozgbrasil/magento2-module/magento2-correios",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "/home/marcio/dados/mozgbrasil/magento2-module/magento2-itau",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "/home/marcio/dados/mozgbrasil/magento2-module/magento2-jadlog",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "/home/marcio/dados/mozgbrasil/magento2-module/magento2-jamef",
+            "options": {
+                "symlink": true
+            }
+        }
+    ],
+    "require": {
+        "php": "~7.1.3||~7.2.0",
+        "ext-pcntl": "*",
+        "magento/module-bundle-sample-data": "100.3.*",
+        "magento/module-catalog-rule-sample-data": "100.3.*",
+        "magento/module-catalog-sample-data": "100.3.*",
+        "magento/module-cms-sample-data": "100.3.*",
+        "magento/module-configurable-sample-data": "100.3.*",
+        "magento/module-customer-sample-data": "100.3.*",
+        "magento/module-downloadable-sample-data": "100.3.*",
+        "magento/module-grouped-product-sample-data": "100.3.*",
+        "magento/module-msrp-sample-data": "100.3.*",
+        "magento/module-offline-shipping-sample-data": "100.3.*",
+        "magento/module-product-links-sample-data": "100.3.*",
+        "magento/module-review-sample-data": "100.3.*",
+        "magento/module-sales-rule-sample-data": "100.3.*",
+        "magento/module-sales-sample-data": "100.3.*",
+        "magento/module-swatches-sample-data": "100.3.*",
+        "magento/module-tax-sample-data": "100.3.*",
+        "magento/module-theme-sample-data": "100.3.*",
+        "magento/module-widget-sample-data": "100.3.*",
+        "magento/module-wishlist-sample-data": "100.3.*",
+        "magento/product-community-edition": "2.3.1",
+        "magento/sample-data-media": "100.3.*",
+        "maycowa/commando": "1.0.*",
+        "mnapoli/bref": "^0.3.6",
+        "prasathmani/tinyfilemanager": "1.0.*",
+        "rafaelstz/traducao_magento2_pt_br": "dev-master",
+        "thaiphan/magento-s3": "^1.3"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "~2.13.0",
+        "lusitanian/oauth": "~0.8.10",
+        "magento/magento2-functional-testing-framework": "2.3.9",
+        "pdepend/pdepend": "2.5.2",
+        "phpmd/phpmd": "@stable",
+        "phpunit/phpunit": "~6.5.0",
+        "sebastian/phpcpd": "~3.0.0",
+        "squizlabs/php_codesniffer": "3.3.1",
+        "symfony/dotenv": "^4.2"
+    },
+    "conflict": {
+        "gene/bluefoot": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Magento\\Framework\\": "magento/lib/internal/Magento/Framework/",
+            "Magento\\Setup\\": "magento/setup/src/Magento/Setup/",
+            "Magento\\": "magento/app/code/Magento/",
+            "Zend\\Mvc\\Controller\\": "magento/setup/src/Zend/Mvc/Controller/"
+        },
+        "psr-0": {
+            "": [
+                "magento/app/code/",
+                "magento/generated/code/"
+            ]
+        },
+        "files": [
+            "magento/app/etc/NonComposerComponentRegistration.php"
+        ],
+        "exclude-from-classmap": [
+            "**/magento/dev/**",
+            "**/magento/update/**",
+            "**/magento/Test/**"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Magento\\Sniffs\\": "magento/dev/tests/static/framework/Magento/Sniffs/",
+            "Magento\\Tools\\": "magento/dev/tools/Magento/Tools/",
+            "Magento\\Tools\\Sanity\\": "magento/dev/build/publication/sanity/Magento/Tools/Sanity/",
+            "Magento\\TestFramework\\Inspection\\": "magento/dev/tests/static/framework/Magento/TestFramework/Inspection/",
+            "Magento\\TestFramework\\Utility\\": "magento/dev/tests/static/framework/Magento/TestFramework/Utility/"
+        }
+    },
+    "config": {
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "process-timeout": 0,
+        "vendor-dir": "magento/vendor"
+    },
+    "extra":{
+        "magento-root-dir":"magento/",
+        "magento-deploystrategy": "copy",
+        "magento-deploystrategy-dev": "symlink",
+        "magento-force": "override"
+    },
+    "scripts": {
+        "post-update-cmd": [
+          "echo '#@@# post-update-cmd';",
+          "cd magento && ln -sf ../composer.* .",
+          "php -r \"system('bash app.sh post_update_cmd');\""
+        ],
+        "post-install-cmd": [
+          "echo '#@@# post-install-cmd';",
+          "cd magento && ln -sf ../composer.* .",
+          "php -r \"system('bash app.sh post_install_cmd');\""
+        ]
+    }
+}

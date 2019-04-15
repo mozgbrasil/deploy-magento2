@@ -25,13 +25,25 @@ echo $umask;
 
 //
 
-echo '<h2> magento/app/etc/env.php </h2>';
+echo '<h2>is_writable</h2>';
 
-$data = file_get_contents("magento/app/etc/env.php"); //read the file
+$filename = 'magento/var';
+
+$perms = substr(sprintf('%o', fileperms($filename)), -4);
 
 echo '<pre>';
-echo $data;
+
+var_dump( "perms: $perms");
+
+if (is_writable($filename)) {
+    var_dump( "$filename is writable");
+} else {
+    var_dump( "$filename is not writable");
+}
+
 echo '</pre>';
+
+//
 
 echo '<h2>getenv</h2>';
 
@@ -39,6 +51,32 @@ echo '<pre>';
 print_r(getenv());
 print_r(getenv('RDS_HOSTNAME'));
 echo '</pre>';
+
+//
+
+echo '<h2>COMPOSER_AUTH</h2>';
+
+// load COMPOSER_AUTH environment variable if set
+$composerAuthEnv = getenv('COMPOSER_AUTH');
+
+//$composerAuthEnv = '{"http-basic": {"repo.magento.com": {"username":"46c4de407a700effa4181aa71a887535","password":"1793ac5de43a4d7e1de34a7936abeb31"}},"github-oauth": {"github.com": "23c13f1b2b51acc7474fbf71bae70e9e6e6f614e"}}';
+
+echo '<pre>';
+print_r($composerAuthEnv);
+echo '</pre>';
+
+if ($composerAuthEnv) {
+    $authData = json_decode($composerAuthEnv, true);
+    echo '<pre>';
+    echo '<h2>authData</h2>';
+    print_r($authData);
+    echo '<h2>json_last_error</h2>';
+    print_r(json_last_error());
+    echo '</pre>';
+    if (null === $authData) {
+        echo('COMPOSER_AUTH environment variable is malformed, should be a valid JSON object');
+    }
+}
 
 //
 

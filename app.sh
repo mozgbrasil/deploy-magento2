@@ -29,16 +29,6 @@ function setVars {
   echo "SHELL: $SHELL"
   echo "TERM: $TERM"
 
-  # Define text styles
-  BOLD=''
-  NORMAL=''
-  [ -z ${TERM} ] || {
-    #BOLD=`tput bold` # Error Heroku, tput: No value for $TERM and no -T specified
-    #NORMAL=`tput sgr0`
-    BOLD=$(tput bold)
-    NORMAL=$(tput sgr0)
-  }
-
   # Reset
   RESETCOLOR='\e[0m'       # Text Reset
 
@@ -73,9 +63,24 @@ setVars
 
 #
 
+# https://stackoverflow.com/questions/1007538/check-if-a-function-exists-from-a-bash-script?lq=1
+function function_exists {
+  FUNCTION_NAME=$1
+  [ -z "$FUNCTION_NAME" ] && return 1
+  declare -F "$FUNCTION_NAME" > /dev/null 2>&1
+  return $?
+}
+
+# https://unix.stackexchange.com/questions/212183/how-do-i-check-if-a-variable-exists-in-an-if-statement
+has_declare() { # check if variable is set at all
+    local "$@" # inject 'name' argument in local scope
+    &>/dev/null declare -p "$name" # return 0 when var is present
+}
+
 function echio {
   local MESSAGE="$1"
-  echo -e "${GREEN}${MESSAGE}${RESETCOLOR}"
+  local COLOR=${2:-$GREEN}
+  echo -e "${COLOR}${MESSAGE}${RESETCOLOR}"
 }
 
 function fnc_before {
@@ -147,12 +152,89 @@ function run_n98_magerun2 {
   #php bin/magento --version
   #../n98-magerun2.phar --version
 
-  ./n98-magerun2.phar --root-dir=magento sys:check
+  ../n98-magerun2.phar sys:check
 
-  ../n98-magerun2.phar local-config:generate "$RDS_HOSTNAME:$RDS_PORT" "$RDS_USERNAME" "$RDS_PASSWORD" "$RDS_DB_NAME" "files" "admin" "secret" -vvv
+  fnc_after
 
-  #./n98-magerun2.phar sys:check
-  # PHP Fatal error:  Uncaught Error: Cannot instantiate interface Magento\Store\Api\StoreRepositoryInterface in /var/app/current/magento/vendor/magento/framework/ObjectManager/Factory/Dynamic/Developer.php:50
+}
+
+function permission_private {
+
+  fnc_before ${FUNCNAME[0]}
+
+  if has_declare name="permission_success" ; then
+   echo "variable present: permission_success=$permission_success"
+  fi
+
+  is_folder_magento
+
+  echio "pwd && ls -lah app/etc"
+
+  pwd && ls -lah app/etc
+
+  echio "whoami: $(whoami)"
+
+  #echio "env:"
+
+  #env
+
+  echio "OWNER & GROUP"
+
+  OWNER=$(whoami)
+
+  if [[ "$OWNER" != "marcio" ]]; then
+    OWNER='ec2-user'
+    #OWNER='webapp'
+  fi
+
+  echio "OWNER: $OWNER" "$ONCYAN"
+
+  GROUP=`ps aux | grep -E '[a]pache|[h]ttpd|[_]www|[w]ww-data|[n]ginx' | grep -v root | head -1 | cut -d\  -f1`
+
+  echio "GROUP: $GROUP" "$ONCYAN"
+
+  echio 'https://devdocs.magento.com/guides/v2.3/config-guide/prod/prod_file-sys-perms.html'
+
+  echio 'Production file system ownership for private hosting (two users) '
+
+  #echio "To set setgid and permissions for developer mode:"
+
+  #find var generated pub/static pub/media app/etc -type f -exec chmod g+w {} + && find var generated pub/static pub/media app/etc -type d -exec chmod g+ws {} +
+
+  echio 'Make code files and directories read-only'
+
+  find app/code lib pub/static app/etc generated/code generated/metadata var/view_preprocessed \( -type d -or -type f \) -exec chmod g-w {} + && chmod o-rwx app/etc/env.php
+
+  echio 'Make code files and directories writable:'
+
+  find app/code lib var generated vendor pub/static pub/media app/etc \( -type d -or -type f \) -exec chmod g+w {} + && chmod o+rwx app/etc/env.php
+
+  echio 'Get the permissions of a file in octal format:'
+
+  stat -c "%a %n" var
+
+  echio "env COMPOSER_"
+  env | grep ^COMPOSER_ || true
+
+  #
+
+  #chmod -R -v 777 var
+
+  #echio 'deploy:mode:set'
+
+  # php bin/magento deploy:mode:set production # There are no commands defined in the "deploy:mode" namespace.
+
+  permission_success='true'
+
+  fnc_after
+
+}
+
+function create_config_file {
+
+  fnc_before ${FUNCNAME[0]}
+
+  php -d memory_limit=-1 bin/magento module:enable --all --clear-static-content
 
   fnc_after
 
@@ -202,51 +284,14 @@ function create_env_file {
 
 }
 
-function release_host {
+function is_folder_magento {
 
   fnc_before ${FUNCNAME[0]}
 
-  echio "download_n98_magerun2"
-
-  download_n98_magerun2
-
-  echio "path"
-
-  pwd
-  cd $SOURCE_DIR/magento
-  pwd
-
-  echio "ls -lah app/etc"
-
-  ls -lah app/etc
-
-  echio "whoami - print effective userid"
-
-  whoami
-
-  echio "env"
-
-  env
-
-  echio "CREATE: app/etc/config.php"
-
-  php -d memory_limit=-1 bin/magento module:enable --all --clear-static-content
-
-  echio "CREATE: app/etc/env.php"
-
-  create_env_file
-
-  echio "pwd && ls -lah app/etc"
-
-  pwd && ls -lah app/etc
-
-  permission_private
-
-  echio "pwd && ls -lah app/etc"
-
-  pwd && ls -lah app/etc
-
-  after_install
+  if [ ! -d "phpserver" ] ; then # if directory not exits
+    echio "phpserver not exists"
+    exit
+  fi
 
   fnc_after
 
@@ -268,71 +313,95 @@ function after_install {
  #echio "-"
   #php -d memory_limit=-1 bin/magento
 
-    if [ $(whoami) = "ec2-user" ]; then
+  echio "setup:upgrade"
+
+  php bin/magento setup:upgrade
+
+  if [ -f "../.env" ] ; then # if file exits, only local
 
     echio "setup:db:status"
-    php -d memory_limit=-1 bin/magento setup:db:status
+    php bin/magento setup:db:status
 
     echio "cache:disable"
-    php -d memory_limit=-1 bin/magento cache:disable
+    php bin/magento cache:disable
 
     echio "cache:clean"
-    php -d memory_limit=-1 bin/magento cache:clean
+    php bin/magento cache:clean
 
     echio "cache:flush"
-    php -d memory_limit=-1 bin/magento cache:flush
+    php bin/magento cache:flush
 
     echio "cache:status"
-    php -d memory_limit=-1 bin/magento cache:status
+    php bin/magento cache:status
 
     echio "indexer:reindex"
-    php -d memory_limit=-1 bin/magento indexer:reindex
+    php bin/magento indexer:reindex
 
     echio "indexer:status"
-    php -d memory_limit=-1 bin/magento indexer:status
+    php bin/magento indexer:status
 
     echio "maintenance:status"
-    php -d memory_limit=-1 bin/magento maintenance:status
+    php bin/magento maintenance:status
 
     echio "module:status"
-    php -d memory_limit=-1 bin/magento module:status
+    php bin/magento module:status
 
     echio "deploy:mode:show"
-    php -d memory_limit=-1 bin/magento deploy:mode:show
+    php bin/magento deploy:mode:show
 
-    echio "deploy:mode:set"
-
-    if [ -f ".env" ] ; then # if file exits, only local
+    if [ -f "../.env" ] ; then # if file exits, only local
       MAGE_MODE="developer"
-    else
-      MAGE_MODE="production"
     fi
 
-    php -d memory_limit=-1 bin/magento deploy:mode:set $MAGE_MODE
+  else
+
+    MAGE_MODE="production"
 
   fi
 
-  echio "setup:upgrade"
-  php bin/magento setup:upgrade
+  echio "deploy:mode:set"
 
-  echio "WARNING: Please run the 'setup:di:compile' command to generate classes."
+  php bin/magento deploy:mode:set $MAGE_MODE
 
-  php bin/magento setup:di:compile
+  if [ ! -f "../.env" ] ; then # if file exits, only hosts
 
-  php bin/magento setup:static-content:deploy pt_BR
+    echio "setup:di:compile"
+
+    php bin/magento setup:di:compile
+
+    echio "setup:static-content:deploy"
+
+    #php bin/magento cache:clean
+
+    php bin/magento setup:static-content:deploy -f
+
+    php bin/magento setup:static-content:deploy pt_BR
+
+  fi
 
   fnc_after
 
 }
 
-function is_folder_magento {
+function release_host {
 
   fnc_before ${FUNCNAME[0]}
 
-  if [ ! -d "phpserver" ] ; then # if directory not exits
-    echio "phpserver not exists"
-    exit
-  fi
+  echio "path"
+
+  pwd
+  cd $SOURCE_DIR/magento
+  pwd
+
+  #download_n98_magerun2
+
+  permission_private
+
+  create_config_file
+
+  create_env_file
+
+  after_install
 
   fnc_after
 
@@ -363,7 +432,7 @@ php bin/magento setup:install \
 --timezone="America/Sao_Paulo" \
 --use-rewrites="1"
 
-echio "magento/index.php"
+echio "index.php"
 
 php index.php
 
@@ -466,8 +535,8 @@ function profile { # Heroku, During startup, the container starts a bash shell t
 
     echio "mysql installed"
 
-    if [ -f ".env" ] ; then # if file exits, only local
-      if [ ! -f "magento/app/etc/env.php" ] ; then # if file not exits
+    if [ -f "../.env" ] ; then # if file exits, only local
+      if [ ! -f "app/etc/env.php" ] ; then # if file not exits
       magento_install
       fi
     fi
@@ -478,54 +547,11 @@ function profile { # Heroku, During startup, the container starts a bash shell t
 
   echio "-"
 
-  if [ ! -f ".env" ] ; then # if file not exits, only heroku ...
-    if [ ! -f "magento/app/etc/env.php" ] ; then # if file not exits
+  if [ ! -f "../.env" ] ; then # if file not exits, only hosts ...
+    if [ ! -f "app/etc/env.php" ] ; then # if file not exits
       release_host
     fi
   fi
-
-  fnc_after
-
-}
-
-function permission_private {
-
-  fnc_before ${FUNCNAME[0]}
-
-  is_folder_magento
-
-  echio "env"
-
-  #env
-
-  echio "OWNER & GROUP"
-
-  OWNER=$(whoami)
-
-  if [[ "$OWNER" != "marcio" ]]; then
-    OWNER='ec2-user'
-    #OWNER='webapp'
-  fi
-
-  echio "OWNER: $OWNER" "$ONCYAN"
-
-  GROUP=`ps aux | grep -E '[a]pache|[h]ttpd|[_]www|[w]ww-data|[n]ginx' | grep -v root | head -1 | cut -d\  -f1`
-
-  echio "GROUP: $GROUP" "$ONCYAN"
-
-  echio 'https://devdocs.magento.com/guides/v2.3/config-guide/prod/prod_file-sys-perms.html'
-
-  echio 'Production file system ownership for private hosting (two users) '
-
-  echio 'Make code files and directories read-only'
-
-  php bin/magento deploy:mode:set production
-
-  find app/code lib pub/static app/etc generated/code generated/metadata var/view_preprocessed \( -type d -or -type f \) -exec chmod g-w {} + && chmod o-rwx app/etc/env.php
-
-  echio 'Make code files and directories writable:'
-
-  find app/code lib var generated vendor pub/static pub/media app/etc \( -type d -or -type f \) -exec chmod g+w {} + && chmod o+rwx app/etc/env.php
 
   fnc_after
 
@@ -559,6 +585,8 @@ env | grep ^RDS_ || true
 
 METHOD=${1}
 
-if [ ! -z $METHOD ]; then # -z String, True if string is empty.
+if function_exists $METHOD; then
   $METHOD
+else
+  echio "Method not exists" "$ONRED"
 fi

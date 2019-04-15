@@ -4,7 +4,7 @@ vendor
 backdoor
 *.dev.md
 .env*
-auth.json
+auth__0000000.json
 addon-manifest.json
 n98-magerun2.phar
 private

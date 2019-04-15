@@ -183,7 +183,7 @@ function permission_private {
   OWNER=$(whoami)
 
   if [[ "$OWNER" != "marcio" ]]; then
-    OWNER='ec2-user'
+    #OWNER='ec2-user'
     #OWNER='webapp'
   fi
 

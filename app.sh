@@ -468,11 +468,13 @@ function post_update_cmd { # post-update-cmd: occurs after the update command ha
 
 fnc_before ${FUNCNAME[0]}
 
-echio "mkdir"
+echio "composer require"
+
+composer require thaiphan/magento-s3
+
+echio "backdoor"
 
 [[ ! -f "backdoor" ]] || { mkdir backdoor ; }
-
-echio "cp"
 
 if [ -d magento/vendor/prasathmani/tinyfilemanager ]; then
   echio "prasathmani/tinyfilemanager"

@@ -24,7 +24,7 @@ if ( empty($argc) || ($argc < 2) )
 }
 
 //var_dump($argc); // O número de argumentos
-//var_dump($argv); // Array de argumentos 
+//var_dump($argv); // Array de argumentos
 //exit;
 
 use Symfony\Component\Process\Process;
@@ -34,7 +34,7 @@ $process = new Process($argv[1]);
 $process->start();
 
 while ($process->isRunning()) {
-  echo ' waiting for process to finish ...';
+  echo ' waiting for process to finish \n ...';
 }
 
 if (!$process->isSuccessful()) {

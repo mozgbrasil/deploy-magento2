@@ -1,6 +1,6 @@
 <?php
 
-error_log('#@@# worker.php');
+echo('#@@# worker.php');
 
 /*while(true) {
     error_log('Log a cada 10 segundos');
@@ -34,7 +34,7 @@ $process = new Process($argv[1]);
 $process->start();
 
 while ($process->isRunning()) {
-  echo ' waiting for process to finish \n ...';
+  echo 'Waiting for process to finish \n ...';
 }
 
 if (!$process->isSuccessful()) {

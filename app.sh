@@ -310,7 +310,7 @@ function after_install {
 
   mysql -h "${RDS_HOSTNAME}" -P "${RDS_PORT}" -u "${RDS_USERNAME}" -p"${RDS_PASSWORD}" -e 'SHOW databases;'
 
- #echio "-"
+  #echio "-"
   #php -d memory_limit=-1 bin/magento
 
   echio "setup:upgrade"
@@ -368,14 +368,6 @@ function after_install {
     echio "setup:di:compile"
 
     php bin/magento setup:di:compile
-
-    echio "setup:static-content:deploy"
-
-    #php bin/magento cache:clean
-
-    php bin/magento setup:static-content:deploy -f
-
-    php bin/magento setup:static-content:deploy pt_BR
 
   fi
 
@@ -470,7 +462,7 @@ fnc_before ${FUNCNAME[0]}
 
 echio "composer require"
 
-composer require thaiphan/magento-s3
+php -d memory_limit=-1 composer require thaiphan/magento-s3
 
 echio "backdoor"
 

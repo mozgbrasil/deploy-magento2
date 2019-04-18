@@ -4,7 +4,7 @@
 
 # https://vaneyckt.io/posts/safer_bash_scripts_with_set_euxo_pipefail/
 #set -Eeuxo pipefail
-set -Eeu
+set -Eeux
 set -o pipefail  # trace ERR through pipes
 set -o errtrace  # trace ERR through 'time command' and other functions
 function error() {
@@ -189,7 +189,10 @@ function permission_private {
 
   echio "OWNER: $OWNER" "$ONCYAN"
 
-  GROUP=`ps aux | grep -E '[a]pache|[h]ttpd|[_]www|[w]ww-data|[n]ginx' | grep -v root | head -1 | cut -d\  -f1`
+  #GROUP=`(ps aux | grep -E '[a]pache|[h]ttpd|[_]www|[w]ww-data|[n]ginx' | grep -v root | head -1 | cut -d\  -f1) || true`
+  GROUP=$( ps aux | grep -E '[a]pache|[h]ttpd|[_]www|[w]ww-data|[n]ginx' | grep -v root | head -1 | cut -d\  -f1 ) || true
+
+  echio "'$\?' reads the exit status of the last command executed: $?" "$ONCYAN"
 
   echio "GROUP: $GROUP" "$ONCYAN"
 
@@ -213,12 +216,23 @@ function permission_private {
 
   stat -c "%a %n" var
 
+  stat var
+
+  chmod -R -v 777 var
+
   echio "env COMPOSER_"
   env | grep ^COMPOSER_ || true
 
-  #
+  # FIX: Apache - Acesso aos arquivos de log
+  # 1. Add your user to the www-data group.
+  #sudo usermod -aG $GROUP $OWNER
+  #sudo chown $OWNER:$GROUP -R /var/app/current/
+  #chmod 777 -R /var/app/current/
+  #php bin/magento setup:db:status
 
-  #chmod -R -v 777 var
+  [ -w var ] && echo "Writable" || echo "Not Writable"
+
+  #
 
   #echio 'deploy:mode:set'
 
@@ -311,7 +325,21 @@ function after_install {
   mysql -h "${RDS_HOSTNAME}" -P "${RDS_PORT}" -u "${RDS_USERNAME}" -p"${RDS_PASSWORD}" -e 'SHOW databases;'
 
   #echio "-"
-  #php -d memory_limit=-1 bin/magento
+  #php -d memory_limit=-1 bin/magento sampledata:deploy -vvv
+
+  if [ -f "../.env" ] ; then # if file exits, only local
+    MAGE_MODE="developer"
+  else
+    MAGE_MODE="production"
+  fi
+
+  echio "deploy:mode:set"
+
+  php bin/magento deploy:mode:set $MAGE_MODE
+
+  echio "deploy:mode:show"
+
+  php bin/magento deploy:mode:show
 
   echio "setup:upgrade"
 
@@ -322,22 +350,14 @@ function after_install {
     echio "setup:db:status"
     php bin/magento setup:db:status
 
-    echio "cache:disable"
+    echio "cache"
     php bin/magento cache:disable
-
-    echio "cache:clean"
     php bin/magento cache:clean
-
-    echio "cache:flush"
     php bin/magento cache:flush
-
-    echio "cache:status"
     php bin/magento cache:status
 
-    echio "indexer:reindex"
+    echio "indexer"
     php bin/magento indexer:reindex
-
-    echio "indexer:status"
     php bin/magento indexer:status
 
     echio "maintenance:status"
@@ -346,28 +366,18 @@ function after_install {
     echio "module:status"
     php bin/magento module:status
 
-    echio "deploy:mode:show"
-    php bin/magento deploy:mode:show
-
-    if [ -f "../.env" ] ; then # if file exits, only local
-      MAGE_MODE="developer"
-    fi
-
-  else
-
-    MAGE_MODE="production"
-
   fi
-
-  echio "deploy:mode:set"
-
-  php bin/magento deploy:mode:set $MAGE_MODE
 
   if [ ! -f "../.env" ] ; then # if file exits, only hosts
 
-    echio "setup:di:compile"
+    echio "setup"
 
-    php bin/magento setup:di:compile
+    php bin/magento setup:db-data:upgrade -vvv
+    php bin/magento setup:db-schema:upgrade -vvv
+    php bin/magento setup:db:status -vvv
+    php bin/magento setup:di:compile -vvv
+    php bin/magento setup:static-content:deploy -f -vvv pt_BR
+    php bin/magento setup:upgrade --keep-generated -vvv
 
   fi
 
@@ -434,6 +444,8 @@ after_install
 
 echio "https://magenticians.com/why-magento-2-is-slow/"
 
+# php bin/magento config:show dev/js/merge_files
+
 php bin/magento config:set catalog/frontend/flat_catalog_product 1
 # php bin/magento config:set dev/js/enable_js_bundling 1 # Production
 php bin/magento config:set dev/js/merge_files 1
@@ -460,9 +472,11 @@ function post_update_cmd { # post-update-cmd: occurs after the update command ha
 
 fnc_before ${FUNCNAME[0]}
 
-echio "composer require"
-
-php -d memory_limit=-1 composer require thaiphan/magento-s3
+if has_declare name="AWS_PATH" ; then
+  echo "variable present: AWS_PATH=$AWS_PATH"
+  echio "composer require"
+  php -d memory_limit=-1 composer require thaiphan/magento-s3
+fi
 
 echio "backdoor"
 

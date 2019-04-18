@@ -25,9 +25,29 @@ echo $umask;
 
 //
 
+echo '<h2>posix_getpwuid</h2>';
+
+$processUser = posix_getpwuid(posix_geteuid());
+print $processUser['name'];
+
+echo '<h2>get_current_user</h2>';
+
+echo get_current_user();
+
+echo '<h2>env user</h2>';
+
+$username = getenv('USERNAME') ?: getenv('USER');
+echo $username; // e.g. root or www-data
+
+//
+
 echo '<h2>is_writable</h2>';
 
 $filename = 'magento/var';
+
+$stat = stat($filename);
+
+var_dump($stat);
 
 $perms = substr(sprintf('%o', fileperms($filename)), -4);
 

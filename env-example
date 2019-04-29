@@ -1,8 +1,9 @@
-# set env variables
-COMPOSER_AUTH={"http-basic": {"repo.magento.com": {"username":"???","password":"???"}},"github-oauth": {"github.com": "???"}}
 MAGE_URL=???
 RDS_HOSTNAME=???
 RDS_PORT=3306
 RDS_DB_NAME=???
 RDS_USERNAME=???
 RDS_PASSWORD=???
+MAGE_MODE=developer
+MAGE_PROFILER=html
+MAGE_CRYPT=???

@@ -48,12 +48,16 @@ https://devdocs.magento.com/guides/v2.3/config-guide/config/config-php.html
 
 https://medium.com/elefante-yogue/usando-php-com-heroku-e7d4f2fee56a
 
-## Executando em ambiente local
+## Install
 
     git clone https://github.com/mozgbrasil/deploy-magento2
     cp env-example .env
     nano .env
     composer install
+
+## Deploy && Re-Deploy
+
+    rm -fr magento backdoor composer.lock && composer install
 
 ## Magento
 

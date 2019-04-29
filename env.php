@@ -1,16 +1,16 @@
 <?php
-$config = array ();
+$config = array();
 
-$config['backend'] = array ('frontName' => '{{MAGENTO_ADMIN_URL}}');
+$config['backend'] = array('frontName' => '{{MAGENTO_ADMIN_URL}}');
 
-$config['crypt'] = array ('key' => '{{MAGENTO_CRYPT}}');
+$config['crypt'] = array('key' => '{{MAGENTO_CRYPT}}');
 
-$config['db'] =  array (
+$config['db'] =  array(
     'table_prefix' => '',
     'connection' =>
-        array (
+        array(
             'default' =>
-                array (
+                array(
                     'host' => '{{MAGENTO_DB_HOST}}',
                     'dbname' => '{{MAGENTO_DB_NAME}}',
                     'username' => '{{MAGENTO_DB_USER}}',
@@ -22,6 +22,18 @@ $config['db'] =  array (
                 ),
         ),
 );
+
+$config['resource'] = array(
+        'default_setup' =>
+            array(
+                'connection' => 'default',
+            ),
+    );
+
+$config['x-frame-options'] = 'SAMEORIGIN';
+
+//todo: get it from env variable?
+$config['MAGE_MODE'] = '{{MAGE_MODE}}';
 
 if (!empty('{{MAGENTO_SESSION_HOST}}') && !empty('{{MAGENTO_SESSION_PORT}}')) {
     $config['session'] =
@@ -50,7 +62,7 @@ if (!empty('{{MAGENTO_SESSION_HOST}}') && !empty('{{MAGENTO_SESSION_PORT}}')) {
                 )
         );
 } else {
-    $config['session'] = array ('save' => 'files');
+    $config['session'] = array('save' => 'files');
 }
 
 if (!empty('{{MAGENTO_CACHE_HOST}}') && !empty('{{MAGENTO_CACHE_PORT}}')) {
@@ -88,50 +100,41 @@ if (!empty('{{MAGENTO_CACHE_HOST}}') && !empty('{{MAGENTO_CACHE_PORT}}')) {
             array(
                 'default' =>
                     array(
-                        'backend' => 'Cm_Cache_Backend_File',
+                        'id_prefix' => 'b3a_',
                     ),
                 'page_cache' =>
                     array(
-                        'backend' => 'Cm_Cache_Backend_File',
+                        'id_prefix' => 'b3a_',
                     )
             )
     );
 }
 
-$config['resource'] = array (
-        'default_setup' =>
-            array (
-                'connection' => 'default',
-            ),
-    );
-
-$config['x-frame-options'] = 'SAMEORIGIN';
-
-//todo: get it from env variable?
-$config['MAGE_MODE'] = 'production';
-
 $config['cache_types'] =
-        array (
-            'config' => 1,
-            'layout' => 1,
-            'block_html' => 1,
-            'collections' => 1,
-            'reflection' => 1,
-            'db_ddl' => 1,
-            'eav' => 1,
-            'customer_notification' => 1,
-            'full_page' => 1,
-            'config_integration' => 1,
-            'config_integration_api' => 1,
-            'translate' => 1,
-            'config_webservice' => 1,
-            'compiled_config' => 1,
+        array(
+            'config' => 0,
+            'layout' => 0,
+            'block_html' => 0,
+            'collections' => 0,
+            'reflection' => 0,
+            'db_ddl' => 0,
+            'compiled_config' => 0,
+            'eav' => 0,
+            'customer_notification' => 0,
+            'config_integration' => 0,
+            'config_integration_api' => 0,
+            'full_page' => 0,
+            'config_webservice' => 0,
+            'translate' => 0,
+            'vertex' => 0
         );
 
-$config['install'] = array ('date' => 'Mon, 01 Jan 2018 00:00:00 +0000');
+$config['install'] = array('date' => 'Thu, 25 Apr 2019 22:59:36 +0000');
 
 if (!empty('{{MAGENTO_WEBCACHE_HOST}}')) {
-    $config['http_cache_hosts'] = array_map(function($e) {return ['host'=>$e, 'port'=>80];} , getHostByNameL('{{MAGENTO_WEBCACHE_HOST}}')?:[]);
+    $config['http_cache_hosts'] = array_map(function ($e) {
+        return ['host'=>$e, 'port'=>80];
+    }, getHostByNameL('{{MAGENTO_WEBCACHE_HOST}}')?:[]);
 }
 
 return $config;

@@ -90,9 +90,9 @@
         "magento/module-wishlist-sample-data": "100.3.*",
         "magento/product-community-edition": "2.3.1",
         "magento/sample-data-media": "100.3.*",
-        "rafaelstz/traducao_magento2_pt_br": "dev-master",
         "maycowa/commando": "1.0.*",
-        "prasathmani/tinyfilemanager": "1.0.*"
+        "prasathmani/tinyfilemanager": "1.0.*",
+        "rafaelstz/traducao_magento2_pt_br": "dev-master"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "~2.13.0",

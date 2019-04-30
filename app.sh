@@ -195,16 +195,16 @@ fi
 
 echio "backdoor"
 
-[[ ! -d "../backdoor" ]] || { mkdir ../backdoor ; }
+[[ ! -f "$SOURCE_DIR/backdoor" ]] || { mkdir $SOURCE_DIR/backdoor ; }
 
 if [ -d vendor/prasathmani/tinyfilemanager ]; then
   echio "prasathmani/tinyfilemanager"
-  cp -fr vendor/prasathmani/tinyfilemanager ../backdoor
+  cp -fr vendor/prasathmani/tinyfilemanager $SOURCE_DIR/backdoor
 fi
 
 if [ -d vendor/maycowa/commando ]; then
   echio "maycowa/commando"
-  cp -fr vendor/maycowa/commando ../backdoor
+  cp -fr vendor/maycowa/commando $SOURCE_DIR/backdoor
 fi
 
 profile
@@ -652,12 +652,12 @@ function magento_deploy {
     MAGE_MODE="developer"
   fi
 
-  #php bin/magento deploy:mode:set $MAGE_MODE
+  php bin/magento deploy:mode:set $MAGE_MODE
 
-  #php bin/magento cache:flush
+  php bin/magento cache:flush
 
   echio "deploy:mode:show"
-  #php bin/magento deploy:mode:show
+  php bin/magento deploy:mode:show
 
   if [ "${MAGE_MODE}" == "production" ]; then # production / developer
 
@@ -677,7 +677,7 @@ function magento_deploy {
     php bin/magento setup:upgrade
 
     echio "setup:db:status"
-    #php bin/magento setup:db:status
+    php bin/magento setup:db:status
 
     echio "cache"
     php bin/magento cache:disable
@@ -690,10 +690,10 @@ function magento_deploy {
     php bin/magento indexer:status
 
     echio "maintenance:status"
-    #php bin/magento maintenance:status
+    php bin/magento maintenance:status
 
     echio "module:status"
-    #php bin/magento module:status
+    php bin/magento module:status
 
   fi
 
@@ -862,14 +862,14 @@ function magento_clean {
 
   echio ""
 
-  rm -rf var/cache/ var/composer_home/ var/generation/ var/page_cache/ var/view_preprocessed/ var/log/ var/tmp pub/media/catalog/product/cache/ pub/static/frontend generated
+  sudo rm -rf var/cache/ var/composer_home/ var/generation/ var/page_cache/ var/view_preprocessed/ var/log/ var/tmp pub/media/catalog/product/cache/ pub/static/frontend generated
 
   php bin/magento cache:disable
   php bin/magento cache:clean
   php bin/magento cache:flush
   php bin/magento cache:status
 
-  chmod 777 -R *
+  chmod 777 -R /home/marcio/dados/mozgbrasil/magento2/magento
 
   echo "Clean Done..."
 

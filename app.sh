@@ -242,7 +242,7 @@ function profile { # Heroku, During startup, the container starts a bash shell t
 
   magento_before_install_set_permission
 
-  magento_switch_symlinks_static_resources
+  #magento_switch_symlinks_static_resources
 
   echio "check mysql"
 
@@ -426,6 +426,9 @@ function magento_before_install_set_permission {
 
 function magento_switch_symlinks_static_resources {
 
+  # https://magento.stackexchange.com/a/156861/38371
+  # there's no Symlinks on Windows. There's 2 ways of fixing that:
+
   fnc_before ${FUNCNAME[0]}
 
   echio "grep -ri"
@@ -439,6 +442,10 @@ function magento_switch_symlinks_static_resources {
   echio "grep -ri"
 
   (grep -ri 'Symlink' app/etc/di.xml) || true
+
+  echio "grep -ri"
+
+  php bin/magento config:set dev/static/sign 0
 
   fnc_after
 

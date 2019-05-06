@@ -75,9 +75,9 @@ Utilize o Composer e tenha sempre um projeto atualizado
 
 Sobre templates, considero a melhor prática o uso do template da empresa Porto, descentralizando esse processo e obtendo atualizações recorrentes dessa equipe
 
-http://www.portotheme.com/magento/porto_landing/
-
 Veja as diversas possibilidades de temas, todos altamente customizável
+
+http://www.portotheme.com/magento/porto_landing/
 
 Precisa de um projeto para ação de Comércio eletrônico, utilize a melhor plataforma, utilize o Magento, entre em contato conosco
 

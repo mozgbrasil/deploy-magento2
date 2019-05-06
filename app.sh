@@ -2,14 +2,29 @@
 
 # Copyright © 2016-2019 Mozg. All rights reserved.
 
-## Deploy && Re-Deploy
-# ls && rm -fr magento backdoor composer.lock && composer install -vvv
+cat <<- _EOF_
 
-## Re-Deploy - 1
-# sudo service apache2 restart && sudo service php7.2-fpm restart
-# Obs. update "MAGE_CRYPT" `cat magento/app/etc/env.php`
-# ls && mv magento magento-18
-# rm -fr backdoor composer.lock && composer install -vvv
+## HELP
+
+sudo service apache2 restart && sudo service php7.2-fpm restart
+
+# Re-Deploy
+
+mysql -h 'mysql' -P '3306' -u 'root' --skip-password -e "\
+SHOW databases; \
+DROP DATABASE magento2026;\
+CREATE DATABASE magento2026;\
+SHOW databases;"
+
+echo "$(date '+%d/%m/%Y %H:%M:%S')" > .touch
+ls
+rm -fr magento backdoor composer.lock
+ls
+composer install -vvv
+echo $(date '+%d/%m/%Y %H:%M:%S')
+cat .touch
+
+_EOF_
 
 # https://vaneyckt.io/posts/safer_bash_scripts_with_set_euxo_pipefail/
 #set -Eeuxo pipefail
@@ -17,9 +32,9 @@ set -Eeu
 set -o pipefail  # trace ERR through pipes
 set -o errtrace  # trace ERR through 'time command' and other functions
 function error() {
-    JOB="$0"              # job name
-    LASTLINE="$1"         # line of error occurrence
-    LASTERR="$2"          # error code
+    local JOB="$0"              # job name
+    local LASTLINE="$1"         # line of error occurrence
+    local LASTERR="$2"          # error code
     echo "ERROR in ${JOB} : line ${LASTLINE} with exit code ${LASTERR}"
     exit 1
 }
@@ -29,8 +44,8 @@ trap 'error ${LINENO} ${?}' ERR
 
 function setVars {
 
-  RED='\033[0;31m'
-  NC='\033[0m' # No Color
+  local RED='\033[0;31m'
+  local NC='\033[0m' # No Color
   echo -e "${RED} ${FUNCNAME[0]} ${NC}"
 
   SOURCE_DIR=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
@@ -86,7 +101,7 @@ function dotenv {
 
 # https://stackoverflow.com/questions/1007538/check-if-a-function-exists-from-a-bash-script?lq=1
 function function_exists {
-  FUNCTION_NAME=$1
+  local FUNCTION_NAME=$1
   [ -z "$FUNCTION_NAME" ] && return 1
   declare -F "$FUNCTION_NAME" > /dev/null 2>&1
   return $?
@@ -113,7 +128,48 @@ function fnc_after {
   echo -e "${ONBLUE}}${RESETCOLOR}"
 }
 
-# methods
+function get_owner_group {
+
+  fnc_before ${FUNCNAME[0]}
+
+  echio "OWNER & GROUP"
+
+  OWNER=$(whoami)
+
+  echio "OWNER: $OWNER" "$ONCYAN"
+
+  if has_declare name="AWS_PATH" ; then
+    echo "variable present: AWS_PATH=$AWS_PATH"
+    #OWNER='ec2-user'
+    OWNER='webapp'
+  fi
+
+  echio "OWNER: $OWNER" "$ONCYAN"
+
+  GROUP=$( ps aux | grep -E '[a]pache|[h]ttpd|[_]www|[w]ww-data|[n]ginx' | grep -v root | head -1 | cut -d\  -f1 ) || true
+
+  echio "reads the exit status of the last command executed: $?"
+  echio "$?" "$ONCYAN"
+
+  echio "GROUP: $GROUP" "$ONCYAN"
+
+  echio "groups"
+
+  groups
+
+  echio "groups OWNER"
+
+  groups $OWNER
+
+  echio "groups GROUP"
+
+  groups $GROUP
+
+  fnc_after
+
+}
+
+get_owner_group
 
 function cd_magento_dir {
 
@@ -174,6 +230,8 @@ function load_dotenv {
   fnc_after
 
 }
+
+load_dotenv
 
 function post_update_cmd { # post-update-cmd: occurs after the update command has been executed, or after the install command has been executed without a lock file present.
 # Na heroku o Mysql ainda não foi instalado nesse ponto
@@ -268,7 +326,7 @@ function profile { # Heroku, During startup, the container starts a bash shell t
     #fi
   #fi
 
-  magento_after_install_set_permission
+  magento_permission_after_install
 
   echio "https://devdocs.magento.com/guides/v2.3/install-gde/install/post-install-config.html"
 
@@ -278,7 +336,7 @@ function profile { # Heroku, During startup, the container starts a bash shell t
 
   echio "crontab -l"
 
-  crontab -l
+  #crontab -l
 
   echio "https://devdocs.magento.com/guides/v2.3/install-gde/install/post-install-umask.html"
 
@@ -306,56 +364,18 @@ function profile { # Heroku, During startup, the container starts a bash shell t
   echio "-" "${ONYELLOW}"
   echio "-" "${ONCYAN}"
 
+  sounds
+
+  echio "-" "${ONYELLOW}"
+  echio "-" "${ONCYAN}"
+
   fnc_after
 
 }
 
-function get_owner_group {
-
-  fnc_before ${FUNCNAME[0]}
-
-  echio "OWNER & GROUP"
-
-  OWNER=$(whoami)
-
-  echio "OWNER: $OWNER" "$ONCYAN"
-
-  if has_declare name="AWS_PATH" ; then
-    echo "variable present: AWS_PATH=$AWS_PATH"
-    #OWNER='ec2-user'
-    OWNER='webapp'
-  fi
-
-  echio "OWNER: $OWNER" "$ONCYAN"
-
-  GROUP=$( ps aux | grep -E '[a]pache|[h]ttpd|[_]www|[w]ww-data|[n]ginx' | grep -v root | head -1 | cut -d\  -f1 ) || true
-
-  echio "reads the exit status of the last command executed: $?"
-  echio "$?" "$ONCYAN"
-
-  echio "GROUP: $GROUP" "$ONCYAN"
-
-  echio "groups"
-
-  groups
-
-  echio "groups OWNER"
-
-  groups $OWNER
-
-  echio "groups GROUP"
-
-  groups $GROUP
-
-  fnc_after
-
-  }
-
 function magento_before_install_set_permission {
 
   fnc_before ${FUNCNAME[0]}
-
-  get_owner_group
 
   echio "https://devdocs.magento.com/guides/v2.3/install-gde/prereq/file-system-perms.html"
 
@@ -455,13 +475,17 @@ function mysql_show_tables {
 
   fnc_before ${FUNCNAME[0]}
 
-  load_dotenv
+  if [ -z "$RDS_PASSWORD" ]; then
+    local PWD_ARG="--skip-password"
+  else
+    local PWD_ARG="-p${RDS_PASSWORD}"
+  fi
 
-  MYSQL_SHOW_TABLES=`mysql -h "${RDS_HOSTNAME}" -P "${RDS_PORT}" -u "${RDS_USERNAME}" -p"${RDS_PASSWORD}" "${RDS_DB_NAME}" -N -e "SHOW TABLES"`
+  MYSQL_SHOW_TABLES=`mysql -h "${RDS_HOSTNAME}" -P "${RDS_PORT}" -u "${RDS_USERNAME}" ${PWD_ARG} "${RDS_DB_NAME}" -N -e "SHOW TABLES"`
 
   echio "-"
 
-  #echo $MYSQL_SHOW_TABLES
+  echo $MYSQL_SHOW_TABLES
 
   fnc_after
 
@@ -471,9 +495,13 @@ function mysql_select_admin_user {
 
   fnc_before ${FUNCNAME[0]}
 
-  load_dotenv
+  if [ -z "$RDS_PASSWORD" ]; then
+    local PWD_ARG="--skip-password"
+  else
+    local PWD_ARG="-p${RDS_PASSWORD}"
+  fi
 
-  MYSQL_SELECT_ADMIN_USER=$(mysql -h "${RDS_HOSTNAME}" -P "${RDS_PORT}" -u "${RDS_USERNAME}" -p"${RDS_PASSWORD}" "${RDS_DB_NAME}" -N -e "SELECT * FROM admin_user") || true
+  MYSQL_SELECT_ADMIN_USER=$(mysql -h "${RDS_HOSTNAME}" -P "${RDS_PORT}" -u "${RDS_USERNAME}" ${PWD_ARG} "${RDS_DB_NAME}" -N -e "SELECT * FROM admin_user") || true
 
   echio "-"
 
@@ -486,8 +514,6 @@ function mysql_select_admin_user {
 function magento_install {
 
   fnc_before ${FUNCNAME[0]}
-
-  load_dotenv
 
   echio "pwd"
 
@@ -512,9 +538,18 @@ php bin/magento setup:install \
 --timezone="America/Sao_Paulo" \
 --use-rewrites="1"
 
-echio "-"
+echio "FIX: MAGE_CRYPT, to Deploy"
 
-#after_install
+echio "cat"
+cat $SOURCE_DIR/.env
+echio "sed"
+sed -i '/MAGE_CRYPT/d' $SOURCE_DIR/.env
+echio "cat"
+cat $SOURCE_DIR/.env
+local CRYPT_KEY=$(php $SOURCE_DIR/app.php)
+echo "MAGE_CRYPT=$CRYPT_KEY" >> $SOURCE_DIR/.env
+echio "cat"
+cat $SOURCE_DIR/.env
 
 echio "https://magenticians.com/why-magento-2-is-slow/"
 
@@ -528,6 +563,8 @@ echio "https://magenticians.com/why-magento-2-is-slow/"
 #php bin/magento config:set dev/css/minify_files 1
 #php bin/magento config:set dev/static/sign 0
 
+MAGENTO_INSTALL_SUCESS="true"
+
 fnc_after
 
 }
@@ -538,9 +575,9 @@ function magento_after_install {
 
   fnc_before ${FUNCNAME[0]}
 
-  create_env_file
+  create_env_php
 
-  create_config_file
+  create_config_php
 
   #magento_build
 
@@ -550,7 +587,7 @@ function magento_after_install {
 
 }
 
-function create_env_file {
+function create_env_php {
 
   fnc_before ${FUNCNAME[0]}
 
@@ -559,36 +596,34 @@ function create_env_file {
     return 0
   fi
 
-  load_dotenv
-
   cp $SOURCE_DIR/env.php $SOURCE_DIR/magento/app/etc/
 
   #php -d memory_limit=-1 bin/magento setup:config:set --backend-frontname "admin" --db-host "${RDS_HOSTNAME}:${RDS_PORT}" --db-name "${RDS_DB_NAME}" --db-user "${RDS_USERNAME}" --db-engine "innodb" --db-password "${RDS_PASSWORD}" --db-prefix "" --db-model "mysql4" --session-save "files" --no-interaction
 
-  MAGENTO_ADMIN_URL="admin"
-  MAGENTO_CRYPT="${MAGE_CRYPT}"
+  local MAGENTO_ADMIN_URL="admin"
+  local MAGENTO_CRYPT="${MAGE_CRYPT}"
 
   if [ -z "$MAGENTO_CRYPT" ]; then
     echo "FAILED: MAGENTO_CRYPT"
     exit
   fi
 
-  MAGENTO_DB_HOST="${RDS_HOSTNAME}:${RDS_PORT}"
-  MAGENTO_DB_NAME="${RDS_DB_NAME}"
-  MAGENTO_DB_USER="${RDS_USERNAME}"
-  MAGENTO_DB_PASSWORD="${RDS_PASSWORD}"
+  local MAGENTO_DB_HOST="${RDS_HOSTNAME}:${RDS_PORT}"
+  local MAGENTO_DB_NAME="${RDS_DB_NAME}"
+  local MAGENTO_DB_USER="${RDS_USERNAME}"
+  local MAGENTO_DB_PASSWORD="${RDS_PASSWORD}"
 
-  MAGE_MODE="${MAGE_MODE}"
+  local MAGE_MODE="${MAGE_MODE}"
 
-  MAGENTO_SESSION_HOST=""
-  MAGENTO_SESSION_PORT=""
-  MAGENTO_SESSION_DATABASE=""
+  local MAGENTO_SESSION_HOST=""
+  local MAGENTO_SESSION_PORT=""
+  local MAGENTO_SESSION_DATABASE=""
 
-  MAGENTO_CACHE_HOST=""
-  MAGENTO_CACHE_PORT=""
-  MAGENTO_CACHE_DATABASE=""
+  local MAGENTO_CACHE_HOST=""
+  local MAGENTO_CACHE_PORT=""
+  local MAGENTO_CACHE_DATABASE=""
 
-  MAGENTO_WEBCACHE_HOST=""
+  local MAGENTO_WEBCACHE_HOST=""
 
   sed -i "s/{{MAGENTO_ADMIN_URL}}/${MAGENTO_ADMIN_URL:-admin}/g" $SOURCE_DIR/magento/app/etc/env.php
   sed -i "s/{{MAGENTO_CRYPT}}/${MAGENTO_CRYPT}/g" $SOURCE_DIR/magento/app/etc/env.php
@@ -614,7 +649,7 @@ function create_env_file {
 
 }
 
-function create_config_file {
+function create_config_php {
 
   fnc_before ${FUNCNAME[0]}
 
@@ -637,26 +672,34 @@ function create_config_file {
 
 function magento_deploy {
 
-  # bash ../app.sh magento_deploy
+  # bash ./app.sh magento_deploy
 
   fnc_before ${FUNCNAME[0]}
 
-  get_owner_group
-
-  load_dotenv
+  #
 
   echio "SHOW DATABASES"
 
-  mysql -h "${RDS_HOSTNAME}" -P "${RDS_PORT}" -u "${RDS_USERNAME}" -p"${RDS_PASSWORD}" -e 'SHOW DATABASES;'
+  if [ -z "$RDS_PASSWORD" ]; then
+    local PWD_ARG="--skip-password"
+  else
+    local PWD_ARG="-p${RDS_PASSWORD}"
+  fi
+
+  local MYSQL_SHOW_DATABASES=$(mysql -h "${RDS_HOSTNAME}" -P "${RDS_PORT}" -u "${RDS_USERNAME}" ${PWD_ARG} -N -e "SHOW DATABASES;") || true
+
+  echo $MYSQL_SHOW_DATABASES
+
+  #
 
   echio "deploy:mode:set"
 
   if has_declare name="AWS_PATH" ; then
     echo "variable present: AWS_PATH=$AWS_PATH"
     #MAGE_MODE="production"
-    MAGE_MODE="developer"
+    local MAGE_MODE="developer"
   else
-    MAGE_MODE="developer"
+    local MAGE_MODE="developer"
   fi
 
   php bin/magento deploy:mode:set $MAGE_MODE
@@ -665,6 +708,8 @@ function magento_deploy {
 
   echio "deploy:mode:show"
   php bin/magento deploy:mode:show
+
+  #
 
   if [ "${MAGE_MODE}" == "production" ]; then # production / developer
 
@@ -678,13 +723,15 @@ function magento_deploy {
 
   fi
 
+  #
+
   if [ "${MAGE_MODE}" == "developer" ]; then
 
     echio "setup:upgrade"
     php bin/magento setup:upgrade
 
     echio "setup:db:status"
-    php bin/magento setup:db:status
+    #php bin/magento setup:db:status
 
     echio "cache"
     php bin/magento cache:disable
@@ -704,11 +751,96 @@ function magento_deploy {
 
   fi
 
+  #
+
+  if has_declare name="MAGENTO_INSTALL_SUCESS" ; then
+
+    echio "MAGENTO_INSTALLED"
+
+  else
+
+    echio "MAGENTO_DEPLOYED"
+
+    fix_remove_item_media_htaccess
+
+    echio "ls"
+
+    ls $SOURCE_DIR/magento/pub/media/catalog/product/m/h/
+
+    echio "resize"
+
+    (php bin/magento catalog:images:resize) || true
+
+    echio "resize"
+
+    #(php bin/magento catalog:images:resize) || true
+
+    echio "cache"
+    #php bin/magento cache:disable
+    php bin/magento cache:clean
+    php bin/magento cache:flush
+    php bin/magento cache:status
+
+  fi
+
+  #
+
   fnc_after
 
 }
 
-#
+function fix_remove_item_media_htaccess {
+
+  fnc_before ${FUNCNAME[0]}
+
+  local STRING_FROM='Options +FollowSymLinks'
+  local FILE_PATH="$SOURCE_DIR/magento/pub/media/.htaccess"
+
+  #cat $FILE_PATH
+  sed -i "/$STRING_FROM/d" $FILE_PATH
+  #cat $FILE_PATH
+
+  fnc_after
+
+}
+
+function fix_update_item_media_htaccess {
+
+  # https://www.geissweb.de/blog/steps-to-install-magento2-with-composer-on-debian-with-virtualmin/
+  # https://github.com/magento/magento2/issues/22603
+  # This way, you will not need to mess around with file permissions, as all the files will be owned by the webserver user.
+
+  fnc_before ${FUNCNAME[0]}
+
+  #
+
+  echio "FIX: 1"
+
+  local STRING_FROM='Options +FollowSymLinks'
+  local STRING_TO='Options +SymLinksIfOwnerMatch'
+  local FILE_PATH="$SOURCE_DIR/magento/pub/media/.htaccess"
+
+  echo ' - ' $STRING_FROM
+  echo ' - ' $STRING_TO
+
+  echio " grep $STRING_FROM $FILE_PATH"
+
+  # grep -ri 'FollowSymLinks' magento/pub/media/.htaccess
+  (grep -rl $STRING_FROM $FILE_PATH) || true
+
+  echio "replace"
+
+  (grep -rl $STRING_FROM $FILE_PATH | xargs sed -i "s/$STRING_FROM/$STRING_TO/g") || true
+
+  echio " grep $STRING_FROM $FILE_PATH" "$ONRED"
+
+  (grep -rl $STRING_FROM $FILE_PATH) || true
+
+  #
+
+  fnc_after
+
+}
 
 function download_n98_magerun2 {
 
@@ -746,19 +878,17 @@ function run_n98_magerun2 {
 
 }
 
-function magento_after_install_set_permission {
+function magento_permission_after_install {
 
   fnc_before ${FUNCNAME[0]}
 
-  if has_declare name="permission_success" ; then
-   echo "variable present: permission_success=$permission_success"
+  if has_declare name="PERMISSION_AFTER_INSTALL_SUCESS" ; then
+   echo "variable present: PERMISSION_AFTER_INSTALL_SUCESS=$PERMISSION_AFTER_INSTALL_SUCESS"
   fi
 
   # FIX: Apache - Acesso aos arquivos de log
   # 1. Add your user to the www-data group.
   # sudo usermod -aG $GROUP $OWNER
-
-  get_owner_group
 
   echio "https://devdocs.magento.com/guides/v2.3/install-gde/prereq/file-system-perms.html"
 
@@ -812,13 +942,8 @@ function magento_after_install_set_permission {
   find app/code lib var generated vendor pub/static pub/media app/etc \( -type d -or -type f \) -exec chmod g+w {} + && chmod o+rwx app/etc/env.php
 
   echo "chown"
-  #chown -R :www-data .
-  #chown -R :$GROUP $SOURCE_DIR/magento
+
   chown -R $OWNER:$GROUP $SOURCE_DIR/magento
-  # chown $OWNER:$GROUP -R /var/app/current/magento/
-  # chown marcio:www-data -R /home/marcio/dados/mozgbrasil/magento2/magento/
-  # chown www-data:www-data -R /home/marcio/dados/mozgbrasil/magento2/magento/
-  # chown ec2-user:webapp -R /var/app/current/
 
   echo "chmod"
   chmod u+x bin/magento
@@ -831,7 +956,7 @@ function magento_after_install_set_permission {
 
   #
 
-  permission_success='true'
+  PERMISSION_AFTER_INSTALL_SUCESS="true"
 
   fnc_after
 
@@ -841,27 +966,6 @@ function release {
   fnc_before ${FUNCNAME[0]}
   fnc_after
 }
-
-function pre_debug {
-
-fnc_before ${FUNCNAME[0]}
-
-echio "pre_debug"
-
-for i in `seq 11 20`; do
-  echo "### $i"
-  ls
-  cp -fr magento-2 "magento-${i}"
-  ls
-done
-
-exit
-
-fnc_after
-
-}
-
-# https://github.com/salehawal/magento2-sysadmin/tree/master/bin
 
 function magento_clean {
 
@@ -876,12 +980,29 @@ function magento_clean {
   php bin/magento cache:flush
   php bin/magento cache:status
 
-  chmod 777 -R /home/marcio/dados/mozgbrasil/magento2/magento
+  chmod 777 -R $SOURCE_DIR/magento
 
   echo "Clean Done..."
 
   fnc_after
 
+}
+
+function sounds {
+  fnc_before ${FUNCNAME[0]}
+  echio "-"
+
+  if [ -d "/usr/share/sounds/ubuntu/stereo/" ] ; then
+    find /usr/share/sounds/ubuntu/stereo/ -type f -exec echo $@ {} \;
+    find /usr/share/sounds/ubuntu/stereo/ -type f -exec paplay $@ {} \;
+  fi
+
+  if [ -d "/usr/share/sounds/freedesktop/stereo/" ] ; then
+    find /usr/share/sounds/freedesktop/stereo/ -type f -exec echo $@ {} \;
+    find /usr/share/sounds/freedesktop/stereo/ -type f -exec paplay $@ {} \;
+  fi
+
+  fnc_after
 }
 
 #
